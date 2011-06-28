@@ -23,7 +23,7 @@ class Button(BaseButton):
         self.action = action
 
     def render(self):
-        attrs = {}
+        attrs = {'class': 'dialogs-button'}
         if self.action:
             attrs['action'] = self.action
         return self._render_html(**attrs)
@@ -38,7 +38,7 @@ class AjaxButton(BaseButton):
         self.error = error
 
     def render(self):
-        attrs = {}
+        attrs = {'class': 'dialogs-ajaxbutton'}
         if self.url:
             attrs['target'] = self.url
         if self.success:
