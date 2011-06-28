@@ -1,0 +1,2 @@
+recursive-include dialogs/static *.png *.gif *.js *.css
+recursive-include dialogs/templates *.html *.txt
