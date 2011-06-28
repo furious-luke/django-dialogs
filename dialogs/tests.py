@@ -1,5 +1,6 @@
 from django.test import TestCase
 from dialogs import *
+from dialogs import BoundPane
 
 
 class EmptyDialog(Dialog):
@@ -7,13 +8,10 @@ class EmptyDialog(Dialog):
 
 
 def setup_panes(inst):
-    inst.buttons={
-        'Login': ('/accounts/login/', {
-            'success': 'CLOSE,SCRIPT:login_complete',
-            'error': 'login',
-        }),
-        'Cancel': 'CLOSE',
-    }
+    inst.buttons = (
+        AjaxButton('Login', '/accounts/login/', success='CLOSE,SCRIPT:login_complete', error='login'),
+        Button('Cancel', 'CLOSE'),
+    )
 
     inst.pane_empty = Pane('')
 
@@ -43,7 +41,7 @@ class PaneTest(TestCase):
     def test_construct_login(self):
         self.assertEqual(self.pane_login.template, 'dialogs/login/login.html')
         self.assertEqual(self.pane_login.method, 'post')
-        self.assertDictEqual(self.pane_login.buttons, self.buttons)
+        self.assertTupleEqual(self.pane_login.buttons, self.buttons)
 
 
 class BoundPaneTest(TestCase):

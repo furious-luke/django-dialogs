@@ -5,9 +5,12 @@ from django.utils.encoding import StrAndUnicode, smart_unicode, force_unicode
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from panes import *
+from buttons import *
 
 
-__all__ = ['Pane', 'BaseDialog', 'Dialog', 'BoundPane', 'LoginDialog']
+__all__ = ['Pane',
+           'Button', 'AjaxButton',
+           'Dialog', 'LoginDialog']
 
 
 ##
@@ -71,12 +74,12 @@ class BaseDialog(StrAndUnicode):
         return BoundPane(self, pane, name)
 
     def render(self):
-        html = u'<div%s class="dialogs-dialog">'%(' id="dialog-%s"'%self.name if self.name else '')
+        html = u'<div%s class="dialogs-dialog">\n'%(' id="dialog-%s"'%self.name if self.name else '')
         for pane in self:
-            html += u'<div id="pane-%s" class="dialogs-pane">'%pane.name
+            html += u'<div id="pane-%s" class="dialogs-pane">\n'%pane.name
             html += pane.render()
-            html += '</div>'
-        html += '</div>'
+            html += '</div>\n'
+        html += '</div>\n'
         return html
 
     @property
@@ -117,7 +120,20 @@ class BoundPane(StrAndUnicode):
             ctx = RequestContext(self.dialog.request, self.dialog.context)
         else:
             ctx = None
-        return render_to_string(self.pane.template, context_instance=ctx)
+        html = render_to_string(self.pane.template, context_instance=ctx)
+        if html:
+            html += u'\n'
+        return html + self.render_buttons()
+
+    def render_buttons(self):
+        if self.pane.buttons:
+            html = [u'<div class="dialogs-buttons">']
+            for btn in self.pane.buttons:
+                html.append(btn.render())
+            html.append(u'</div>')
+            return u'\n'.join(html)
+        else:
+            return u''
 
 
 ##
@@ -126,13 +142,10 @@ class LoginDialog(Dialog):
     login = Pane(
         'dialogs/login/login.html',
         method='post',
-        buttons={
-            'Login': ('/accounts/login/', {
-                'success': 'CLOSE,SCRIPT:login_complete',
-                'error': 'login',
-            }),
-            'Cancel': 'CLOSE',
-        }
+        buttons=(
+            AjaxButton('Login', '/accounts/login/', success='CLOSE,SCRIPT:login_complete', error='login'),
+            Button('Cancel', 'CLOSE'),
+        )
     )
 
     class Meta:
