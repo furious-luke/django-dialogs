@@ -82,8 +82,16 @@ class BaseDialog(StrAndUnicode):
     @property
     def media(self):
         media = Media()
+
+        # Add the appropriate dialog media; this will depend on which
+        # client-side dialog library is chosen.
+        media.add_js('js/jquery.min.js', 'js/jquery-ui.min.js')
+
+        # Add the dialogs scripts.
+        media.add_js('js/dialogs/jquery.dialogs.min.js', 'js/dialogs/dialogs.min.js')
+
         for pane in self.panes.values():
-            media = media + pane.widget.media
+            media = media + pane.media
         return media
 
 

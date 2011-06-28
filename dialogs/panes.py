@@ -1,10 +1,12 @@
 from django.template import loader
+from django.forms.widgets import MediaDefiningClass
 
 
 __all__ = ['Pane']
 
 
 class Pane(object):
+    __metaclass__ = MediaDefiningClass
 
     creation_counter = 0
 
