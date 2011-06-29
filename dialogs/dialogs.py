@@ -3,8 +3,6 @@ from django.utils.datastructures import SortedDict
 from django.utils.safestring import mark_safe
 from django.forms.widgets import Media, media_property
 from django.utils.encoding import StrAndUnicode
-from django.template import RequestContext
-from django.template.loader import render_to_string
 from panes import *
 from buttons import *
 
@@ -88,12 +86,10 @@ class BaseDialog(StrAndUnicode):
 
         html = u'<div%s class="dialogs-dialog">\n'%(' id="dialog-%s"'%self.name if self.name else '')
         for pane in self:
-            classes = ['dialogs-pane']
+            classes = []
             if pane.name == first_pane:
                 classes.append('first')
-            html += u'<div id="pane-%s" class="%s">\n'%(pane.name, ' '.join(classes))
-            html += pane.render()
-            html += '</div>\n'
+            html += pane.render({'class': classes})
         html += '</div>\n'
         return mark_safe(unicode(html))
 
@@ -117,10 +113,10 @@ class BaseDialog(StrAndUnicode):
 
         # Add the appropriate dialog media; this will depend on which
         # client-side dialog library is chosen.
-        media.add_js('js/jquery.min.js', 'js/jquery-ui.min.js')
+        media.add_js(['js/jquery.min.js', 'js/jquery-ui.min.js'])
 
         # Add the dialogs scripts.
-        media.add_js('js/dialogs/jquery.dialogs.min.js', 'js/dialogs/dialogs.min.js')
+        media.add_js(['js/dialogs/jquery.dialogs.js', 'js/dialogs/dialogs.js'])
 
         for pane in self.panes.values():
             media = media + pane.media
@@ -146,27 +142,8 @@ class BoundPane(StrAndUnicode):
         self.pane = pane
         self.name = name
 
-    def render(self):
-        if not self.pane.template:
-            return u''
-        if self.dialog.request is not None:
-            ctx = RequestContext(self.dialog.request, self.dialog.context)
-        else:
-            ctx = None
-        html = render_to_string(self.pane.template, context_instance=ctx)
-        if html:
-            html += u'\n'
-        return html + self.render_buttons()
-
-    def render_buttons(self):
-        if self.pane.buttons:
-            html = [u'<div class="dialogs-buttons">']
-            for btn in self.pane.buttons:
-                html.append(btn.render())
-            html.append(u'</div>')
-            return u'\n'.join(html)
-        else:
-            return u''
+    def render(self, attrs=None):
+        return self.pane.render(self.dialog, self.name, attrs)
 
 
 ##
