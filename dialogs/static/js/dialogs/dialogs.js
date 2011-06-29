@@ -36,7 +36,14 @@ function dialogs_handle_actions(btn, action_str, data) {
 	    var func = act.split(':');
 	    if(func.length > 1) {
 		if(func[0] == 'NEXT') {
-		    dialogs_next(btn, func[1]);
+		    if(func[1][0] == '$') {
+			// Use a value returned in the data to move to the
+			// next pane.
+			next = data[func[1].slice(1)];
+		    }
+		    else
+			next = func[1];
+		    dialogs_next(btn, next);
 		}
 		else if(func[0] == 'SCRIPT') {
 		    func = func[1];
@@ -105,10 +112,10 @@ $('.dialogs-ajaxbutton').click(function() {
 	else {
     	    var data = $.parseJSON(xhr.responseText);
     	    if(data.status == 'success') {
-    		dialogs_handle_actions(btn, success, data.response);
+    		dialogs_handle_actions(btn, success, data);
     	    }
     	    else if(data.status == 'error') {
-    		dialogs_handle_actions(btn, error, data.response);
+    		dialogs_handle_actions(btn, error, data);
     	    }
     	    else {
     		alert('Unhandled status "' + data.status + '".');
