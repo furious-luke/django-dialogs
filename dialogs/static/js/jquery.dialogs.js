@@ -4,10 +4,12 @@
 
     return this.each(function() {
 
-	var dialog = $($(this).attr('target'));
-	var modal = Boolean($(this).attr('modal'));
+	var dialog = $('#' + $(this).attr('target'));
+	var modal = $(this).attr('modal');
 	if(modal == undefined)
 	    modal = true;
+	else
+	    modal = Boolean(modal);
 
 	var settings = $.extend({'autoOpen': false, 'modal': modal}, options);
 	dialog.dialog(settings);
@@ -16,7 +18,7 @@
 	    // Hide all panes...
 	    dialog.children('div').hide();
 	    // ... then show the first one.
-	    dialog.children('div#' + dialog.attr('first')).show();
+	    dialog.children('div.first').show();
 	    dialog.dialog('open');
 	});
 

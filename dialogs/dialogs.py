@@ -1,7 +1,8 @@
 from django.utils.copycompat import deepcopy
 from django.utils.datastructures import SortedDict
+from django.utils.safestring import mark_safe
 from django.forms.widgets import Media, media_property
-from django.utils.encoding import StrAndUnicode, smart_unicode, force_unicode
+from django.utils.encoding import StrAndUnicode
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from panes import *
@@ -56,11 +57,12 @@ class BaseDialog(StrAndUnicode):
     def __init__(self, name='', request=None, context={}):
         self.name = unicode(name)
         self.panes = deepcopy(self.base_panes)
+        self.first_pane = None
         self.request = request
         self.context = context
 
     def __unicode__(self):
-        return self.as_table()
+        return self.render()
 
     def __iter__(self):
         for name, pane in self.panes.items():
@@ -74,13 +76,24 @@ class BaseDialog(StrAndUnicode):
         return BoundPane(self, pane, name)
 
     def render(self):
+
+        # Which pane to show first.
+        if len(self.panes) > 0:
+            if self.first_pane is not None:
+                first_pane = self.first_pane
+            else:
+                first_pane = self.panes.keys()[0]
+
         html = u'<div%s class="dialogs-dialog">\n'%(' id="dialog-%s"'%self.name if self.name else '')
         for pane in self:
-            html += u'<div id="pane-%s" class="dialogs-pane">\n'%pane.name
+            classes = ['dialogs-pane']
+            if pane.name == first_pane:
+                classes.append('first')
+            html += u'<div id="pane-%s" class="%s">\n'%(pane.name, ' '.join(classes))
             html += pane.render()
             html += '</div>\n'
         html += '</div>\n'
-        return html
+        return mark_safe(unicode(html))
 
     @property
     def media(self):
@@ -147,7 +160,3 @@ class LoginDialog(Dialog):
             Button('Cancel', 'CLOSE'),
         )
     )
-
-    class Meta:
-        dialog_library = 'jQueryUI'
-        first_pane = 'login'
