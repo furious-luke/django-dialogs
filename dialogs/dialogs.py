@@ -54,12 +54,14 @@ class DeclarativePanesMetaclass(type):
 # the original.
 class BaseDialog(StrAndUnicode):
 
-    def __init__(self, name='', request=None, context={}):
+    def __init__(self, request, name='', context={}):
         self.name = unicode(name)
         self.panes = deepcopy(self.base_panes)
+        self.trigger_name = None
         self.first_pane = None
         self.request = request
         self.context = context
+        self._type = None
 
     def __unicode__(self):
         return self.render()
@@ -95,6 +97,20 @@ class BaseDialog(StrAndUnicode):
         html += '</div>\n'
         return mark_safe(unicode(html))
 
+    def trigger_as_a(self):
+        if self.trigger_name is None:
+            name = self.name
+        else:
+            name = self.trigger_name
+        return mark_safe(u'<a class="dialogs-%s" target="dialog-%s">%s</a>'%(self._type, self.name, name))
+
+    def trigger_as_button(self):
+        if self.trigger_name is None:
+            name = self.name
+        else:
+            name = self.trigger_name
+        return mark_safe(u'<button type="button" class="dialogs-%s" target="dialog-%s">%s</button>'%(self._type, self.name, name))
+
     @property
     def media(self):
         media = Media()
@@ -115,6 +131,10 @@ class BaseDialog(StrAndUnicode):
 #
 class Dialog(BaseDialog):
     __metaclass__ = DeclarativePanesMetaclass
+
+    def __init__(self, *args, **kwargs):
+        super(Dialog, self).__init__(*args, **kwargs)
+        self._type = 'html'
 
 
 ##
@@ -154,9 +174,20 @@ class BoundPane(StrAndUnicode):
 class LoginDialog(Dialog):
     login = Pane(
         'dialogs/login/login.html',
-        method='post',
         buttons=(
-            AjaxButton('Login', '/accounts/login/', success='CLOSE,SCRIPT:login_complete', error='login'),
+            AjaxButton('Login', '/accounts/login/ajax/', success='CLOSE,SCRIPT:login_complete', error='SCRIPT:login_error'),
+            Button('Cancel', 'CLOSE'),
+        )
+    )
+
+
+##
+#
+class RegisterDialog(Dialog):
+    register = Pane(
+        'dialogs/login/register.html',
+        buttons=(
+            AjaxButton('Register', '/accounts/register/ajax/', success='CLOSE,SCRIPT:login_complete', error='login'),
             Button('Cancel', 'CLOSE'),
         )
     )

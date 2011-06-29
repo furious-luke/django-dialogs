@@ -22,14 +22,14 @@ function dialogs_close(btn) {
     dialog.dialog('close');
 }
 
-function dialogs_handle_actions(btn, action_str) {
+function dialogs_handle_actions(btn, action_str, data) {
     var actions = action_str.split(',');
     for(var ii = 0; ii < actions.length; ++ii) {
 	var act = $.trim(actions[ii]);
 	if(act == 'CLOSE') {
 	    dialogs_close(btn);
 	}
-	if(act == 'PREV') {
+	else if(act == 'PREV') {
 	    dialogs_prev(btn);
 	}
 	else {
@@ -40,14 +40,18 @@ function dialogs_handle_actions(btn, action_str) {
 		}
 		else if(func[0] == 'SCRIPT') {
 		    func = func[1];
-		    // Call function somehow...
-		    alert('can\'t call scripts yet');
+		    if(eval('typeof ' + func) == 'function')
+			eval(func + '(data);');
 		}
 	    }
 	    else
 		alert('Unrecognised action: "' + act + '"');
 	}
     }
+}
+
+function dialogs_alert(msg) {
+    alert(msg);
 }
 
 $('.dialogs-html').dialog_trigger();
@@ -66,43 +70,50 @@ $('.dialogs-ajaxbutton').click(function() {
     var success = $(this).attr('success');
     var error = $(this).attr('error');
 
-    // If no form specified, find the first form in the pane.
-    if(form == undefined)
-	form = $(this).closest('div.dialog-pane').children('form').first();
+    // If there is no form specified, first try and find a form in
+    // the local pane.
+    if(form == undefined || form == null) {
+	form = $(this).closest('div.dialogs-pane').find('form').first();
+
+	// If we still couldn't find a form, look for one as a child of
+	// dialog itself.
+	if(form.length == 0)
+	    form = $(this).closest('div.dialogs-dialog').children('form').first();
+    }
     else
 	form = $(form).first();
 
     // If no success actions given, just close the dialog.
-    if(success == undefined)
+    if(success == undefined || success == null)
 	success = 'CLOSE';
 
     // If no error given, just alert the user.
-    if(error == undefined)
+    if(error == undefined || error == null)
 	error = 'SCRIPT:dialogs_alert';
 
     // Pack our data if there is any.
+    var send_data = '';
     if(form.length > 0)
 	send_data = form.serialize();
-    else
-	send_data = '';
 
     // Submit our AJAX request, note that we're using the jqXHR
     // system, so we need jQuery 1.5+.
-    $.post(url, send_data)
-    .success(function(data) {
-	data = $.parseJSON(data);
-	if(data.status == 'success') {
-	    dialogs_handle_actions(btn, success);
-	}
-	else if(data.status == 'error') {
-	    dialogs_handle_actions(btn, error);
+    $.post(url, send_data).complete(function(xhr, status) {
+	if(status == 'error' || !xhr.responseText) {
+    	    alert('AJAX request failed.');
 	}
 	else {
-	    alert('Unhandled status "' + data.status + '".');
+    	    var data = $.parseJSON(xhr.responseText);
+    	    if(data.status == 'success') {
+    		dialogs_handle_actions(btn, success, data.response);
+    	    }
+    	    else if(data.status == 'error') {
+    		dialogs_handle_actions(btn, error, data.response);
+    	    }
+    	    else {
+    		alert('Unhandled status "' + data.status + '".');
+    	    }
 	}
-    })
-    .error(function() {
-	alert('AJAX request failed.');
     });
 });
 

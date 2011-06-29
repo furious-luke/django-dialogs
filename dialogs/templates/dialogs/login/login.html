@@ -2,5 +2,7 @@
   Enter your username and password to login:
 </p>
 <form>
-  {{ login_form }}
+  {% csrf_token %}
+  <input type="text" id="id_username" name="username" />
+  <input type="password" id="id_password" name="password" />
 </form>
