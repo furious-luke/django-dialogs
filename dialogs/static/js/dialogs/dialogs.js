@@ -48,7 +48,7 @@ function dialogs_handle_actions(btn, action_str, data) {
 		else if(func[0] == 'SCRIPT') {
 		    func = func[1];
 		    if(eval('typeof ' + func) == 'function')
-			eval(func + '(data);');
+			eval(func + '(btn, data);');
 		}
 	    }
 	    else
@@ -57,8 +57,33 @@ function dialogs_handle_actions(btn, action_str, data) {
     }
 }
 
-function dialogs_alert(msg) {
+function dialogs_alert(obj, msg) {
     alert(msg);
+}
+
+function dialogs_show_form_errors(obj, data) {
+    form_errors = data.form_errors;
+    if(form_errors == undefined || form_errors == null)
+        return;
+    var pane = obj.closest('div.dialogs-pane');
+    for(var field_name in form_errors) {
+       var field = pane.find('#id_' + field_name);
+       if(field.length == 0)
+           continue;
+       var errors = form_errors[field_name];
+       if(errors.length == 0)
+           continue;
+       html = '<ul class="dialogs-formerrors">';
+       for(var error in errors) {
+           html += '<li>' + error + '</li>';
+       html += '</ul>';
+       field.before(html);
+    }
+}
+
+function dialogs_clear_form_errors(obj) {
+    var pane = obj.closest('div.dialogs-pane');
+    pane.find('ul.dialogs-formerrors').remove();
 }
 
 $('.dialogs-html').dialog_trigger();
@@ -77,6 +102,9 @@ $('.dialogs-ajaxbutton').click(function() {
     var success = $(this).attr('success');
     var error = $(this).attr('error');
 
+    // Clear out any form errors before we begin.
+    dialogs_clear_form_errors(btn);
+
     // If there is no form specified, first try and find a form in
     // the local pane.
     if(form == undefined || form == null) {
@@ -94,9 +122,9 @@ $('.dialogs-ajaxbutton').click(function() {
     if(success == undefined || success == null)
 	success = 'CLOSE';
 
-    // If no error given, just alert the user.
+    // If no error given just run any form error processing.
     if(error == undefined || error == null)
-	error = 'SCRIPT:dialogs_alert';
+	error = 'SCRIPT:dialogs_show_form_errors';
 
     // Pack our data if there is any.
     var send_data = '';

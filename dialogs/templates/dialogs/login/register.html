@@ -1,6 +1,14 @@
 <p>
-  Sign up.
+  Sign up
 </p>
 <form>
+  {% if register_form %}
   {{ register_form }}
+  {% else %}
+  {% csrf_token %}
+  <input type="text" id="id_username" name="username" />
+  <input type="text" id="id_email" name="email" />
+  <input type="password" id="id_password" name="password" />
+  <input type="password" id="id_confirm" name="confirm" />
+  {% endif %}
 </form>

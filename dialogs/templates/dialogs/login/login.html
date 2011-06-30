@@ -1,8 +1,12 @@
 <p>
-  Enter your username and password to login:
+  Enter your username and password to login
 </p>
 <form>
+  {% if login_form %}
+  {{ login_form }}
+  {% else %}
   {% csrf_token %}
   <input type="text" id="id_username" name="username" />
   <input type="password" id="id_password" name="password" />
+  {% endif %}
 </form>

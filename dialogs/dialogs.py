@@ -144,27 +144,3 @@ class BoundPane(StrAndUnicode):
 
     def render(self, attrs=None):
         return self.pane.render(self.dialog, self.name, attrs)
-
-
-##
-#
-class LoginDialog(Dialog):
-    login = Pane(
-        'dialogs/login/login.html',
-        buttons=(
-            AjaxButton('Login', '/accounts/login/ajax/', success='CLOSE,SCRIPT:login_complete', error='SCRIPT:login_error'),
-            Button('Cancel', 'CLOSE'),
-        )
-    )
-
-
-##
-#
-class RegisterDialog(Dialog):
-    register = Pane(
-        'dialogs/login/register.html',
-        buttons=(
-            AjaxButton('Register', '/accounts/register/ajax/', success='CLOSE,SCRIPT:login_complete', error='login'),
-            Button('Cancel', 'CLOSE'),
-        )
-    )
