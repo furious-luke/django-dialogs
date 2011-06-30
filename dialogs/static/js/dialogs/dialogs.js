@@ -1,11 +1,18 @@
 $(document).ready(function() {
 
+function dialogs_show_pane(pane) {
+    if(pane.hasClass('dialogs-ajaxpane'))
+        pane.show(function() { dialogs_load_ajax_pane(pane); });
+    else
+        pane.show();
+}
+
 function dialogs_next(btn, next) {
     var cur = btn.closest('div.dialogs-pane');
     var dialog = cur.closest('div.dialogs-dialog');
     var next = dialog.children('div#pane-' + next);
     cur.hide();
-    next.show();
+    dialogs_show_pane(next);
     next.attr('prev', cur.attr('id'));
 }
 
@@ -86,6 +93,32 @@ function dialogs_clear_form_errors(obj) {
     pane.find('ul.dialogs-formerrors').remove();
 }
 
+function dialogs_load_ajax_pane(pane) {
+    var url = pane.attr('target');
+    var form = pane.attr('form');
+    var error = pane.attr('error');
+
+    // If no error given, just alert the user.
+    if(error == undefined || error == null)
+	error = 'SCRIPT:dialogs_alert';
+
+    // Pack our data if there is any.
+    var send_data = '';
+    if(form.length > 0)
+	send_data = form.serialize();
+
+    // Submit our AJAX request, note that we're using the jqXHR
+    // system, so we need jQuery 1.5+.
+    $.post(url, send_data).complete(function(xhr, status) {
+	if(status == 'error' || !xhr.responseText) {
+    	    alert('AJAX request failed.');
+	}
+	else {
+	    pane.children('div.dialogs-ajaxpanecontent').html(data);
+	}
+    });
+});
+
 $('.dialogs-html').dialog_trigger();
 $('.dialogs-ajax').ajax_dialog_trigger();
 
@@ -148,34 +181,6 @@ $('.dialogs-ajaxbutton').click(function() {
     	    else {
     		alert('Unhandled status "' + data.status + '".');
     	    }
-	}
-    });
-});
-
-// Handle AJAX panes.
-$('.dialogs-ajaxpane').click(function() {
-    var pane = $(this);
-    var url = $(this).attr('target');
-    var form = $(this).attr('form');
-    var error = $(this).attr('error');
-
-    // If no error given, just alert the user.
-    if(error == undefined || error == null)
-	error = 'SCRIPT:dialogs_alert';
-
-    // Pack our data if there is any.
-    var send_data = '';
-    if(form.length > 0)
-	send_data = form.serialize();
-
-    // Submit our AJAX request, note that we're using the jqXHR
-    // system, so we need jQuery 1.5+.
-    $.post(url, send_data).complete(function(xhr, status) {
-	if(status == 'error' || !xhr.responseText) {
-    	    alert('AJAX request failed.');
-	}
-	else {
-	    pane.children('div.dialogs-ajaxpanecontent').html(data);
 	}
     });
 });

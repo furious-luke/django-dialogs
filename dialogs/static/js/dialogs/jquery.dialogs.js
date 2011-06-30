@@ -18,7 +18,8 @@
 	    // Hide all panes...
 	    dialog.children('div').hide();
 	    // ... then show the first one.
-	    dialog.children('div.first').show();
+            var pane = dialog.children('div.first');
+            dialogs_show_pane(pane);
 	    dialog.dialog('open');
 	});
 
