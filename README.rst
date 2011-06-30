@@ -80,7 +80,7 @@ as form widgets. If you have a form and a dialog on a page, the
 following can be used to merge all required javascript and CSS
 files::
 
-  {{ dialog.media + form.media }}
+  {{ dialog.media|add:form.media }}
 
 Including javascript in this fashion assumes that in your static
 files folder you have ``js/jquery.min.js`` and ``js/jquery-ui.min.js``,
