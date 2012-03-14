@@ -3,13 +3,14 @@ from django.utils.datastructures import SortedDict
 from django.utils.safestring import mark_safe
 from django.forms.widgets import Media, media_property
 from django.utils.encoding import StrAndUnicode
+from pythonutils.html import AttrDict
 from panes import *
 from buttons import *
 
 
-__all__ = ['Pane',
+__all__ = ('Pane',
            'Button', 'AjaxButton',
-           'Dialog', 'LoginDialog']
+           'Dialog')
 
 
 ##
@@ -52,13 +53,17 @@ class DeclarativePanesMetaclass(type):
 # the original.
 class BaseDialog(StrAndUnicode):
 
-    def __init__(self, request, name='', context={}):
-        self.name = unicode(name)
+    def __init__(self, request=None, context={}, name=''):
+        if name:
+            self.name = unicode(name)
+        if not hasattr(self, 'view'):
+            self.view = self.name
         self.panes = deepcopy(self.base_panes)
-        self.trigger_name = None
-        self.first_pane = None
+        self.first_pane = self._gen_first_pane()
+        self.current_pane = self.first_pane
         self.request = request
         self.context = context
+        self._trigger_name = None
         self._type = None
 
     def __unicode__(self):
@@ -70,20 +75,17 @@ class BaseDialog(StrAndUnicode):
 
     def __getitem__(self, name):
         try:
-            pane = self.panes[name]
+            if isinstance(name, (int, long)):
+                item = self.panes.items()[name]
+                name = item[0]
+                pane = item[1]
+            else:
+                pane = self.panes[name]
         except KeyError:
             raise KeyError('Key %r not found in Dialog'%name)
         return BoundPane(self, pane, name)
 
     def render(self):
-
-        # Which pane to show first.
-        if len(self.panes) > 0:
-            if self.first_pane is not None:
-                first_pane = self.first_pane
-            else:
-                first_pane = self.panes.keys()[0]
-
         html = u'<div%s class="dialogs-dialog">\n'%(' id="dialog-%s"'%self.name if self.name else '')
         for pane in self:
             classes = []
@@ -93,19 +95,36 @@ class BaseDialog(StrAndUnicode):
         html += '</div>\n'
         return mark_safe(unicode(html))
 
+    def get_trigger_name(self):
+        return self._trigger_name if (self._trigger_name is not None) else self.name
+
+    def set_trigger_name(self, value):
+        self._trigger_name = value
+
     def trigger_as_a(self):
-        if self.trigger_name is None:
-            name = self.name
-        else:
-            name = self.trigger_name
-        return mark_safe(u'<a class="dialogs-%s" target="dialog-%s">%s</a>'%(self._type, self.name, name))
+        return mark_safe(u'<a class="dialogs-%s" target="dialog-%s">%s</a>'%(self._type, self.name, self.trigger_name))
 
     def trigger_as_button(self):
-        if self.trigger_name is None:
-            name = self.name
-        else:
-            name = self.trigger_name
-        return mark_safe(u'<button type="button" class="dialogs-%s" target="dialog-%s">%s</button>'%(self._type, self.name, name))
+        return mark_safe(u'<input type="button" class="dialogs-%s" target="dialog-%s">%s</button>'%(self._type, self.name, self.trigger_name))
+
+    def trigger_as_submit(self, attrs={}):
+        final_attrs = AttrDict({
+            'type': 'submit',
+            'class': 'dialogs-%s'%self._type,
+            'name': self.name,
+            # 'target': self.name,
+            'value': self.trigger_name,
+        },
+            mergers=('class',)
+        )
+        final_attrs.update(attrs)
+        # final_attrs.merge(merge_attrs)
+        return mark_safe(u'<input%s"></input>'%unicode(final_attrs))
+
+    def _gen_first_pane(self):
+        return self[0] if len(self.panes) else None
+
+    trigger_name = property(get_trigger_name, set_trigger_name)
 
     @property
     def media(self):
@@ -141,6 +160,10 @@ class BoundPane(StrAndUnicode):
         self.dialog = dialog
         self.pane = pane
         self.name = name
+        self.view = pane.view if pane.view else dialog.view
+
+    def __unicode__(self):
+        return self.render()
 
     def render(self, attrs=None):
-        return self.pane.render(self.dialog, self.name, attrs)
+        return mark_safe(self.pane.render(self.dialog, self.name, attrs))

@@ -1,2 +1,2 @@
-recursive-include dialogs/static *.png *.gif *.js *.css
-recursive-include dialogs/templates *.html *.txt
+recursive-include djangodialogs/static *.png *.gif *.js *.css
+recursive-include djangodialogs/templates *.html *.txt
